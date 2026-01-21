@@ -1,0 +1,8 @@
+services:
+  tokenize:
+    build: .
+    container_name: app
+    ports:
+      - "8080:${HTTP_PORT}"
+    environment:
+      HTTP_PORT: ${HTTP_PORT}
