@@ -37,10 +37,11 @@ func run(ctx context.Context) error {
 	config := common.Config{}
 
 	fs.IntVar(&config.HttpPort, "http-port", 8080, "Http Server Port")
+	fs.IntVar(&config.HttpPortDebug, "http-debug-port", 6060, "Http Debug Server Port")
 
 	err := ff.Parse(fs, os.Args[1:], ff.WithEnvVars())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Usage: %s \n", strings.Join(os.Args, " "))
+		_, _ = fmt.Fprintf(os.Stderr, "Usage: %s \n", strings.Join(os.Args, " "))
 		fs.PrintDefaults()
 		return fmt.Errorf("flag set: %w", err)
 	}
@@ -50,11 +51,12 @@ func run(ctx context.Context) error {
 
 	srv := service.NewApp()
 
-	h := http.NewServer(config.HttpPort, srv)
+	h := http.NewServer(config.HttpPort, config.HttpPortDebug, srv)
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error { return h.Serve(ctx) })
+	g.Go(func() error { return h.ServeDebug(ctx) })
 
 	return g.Wait()
 }

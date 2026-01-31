@@ -42,7 +42,7 @@ func TestRead(t *testing.T) {
 			srv := &mock.AppMock{}
 			srv.ReadFunc = tc.somethingFunc
 
-			s := NewServer(8080, srv)
+			s := NewServer(8080, 6060, srv)
 			tc.HttpTest.Run(t, s.read)
 		})
 	}
@@ -93,7 +93,7 @@ func TestSomething(t *testing.T) {
 			srv := &mock.AppMock{}
 			srv.SomethingFunc = tc.somethingFunc
 
-			s := NewServer(8080, srv)
+			s := NewServer(8080, 6060, srv)
 			tc.HttpTest.Run(t, s.something)
 		})
 	}
@@ -148,7 +148,7 @@ func TestSomethingId(t *testing.T) {
 			srv := &mock.AppMock{}
 			srv.SomethingIdFunc = tc.somethingFunc
 
-			s := NewServer(8080, srv)
+			s := NewServer(8080, 6060, srv)
 			tc.HttpTest.Run(t, s.somethingId)
 		})
 	}

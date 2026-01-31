@@ -3,11 +3,12 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	httpserver "net/http"
+	_ "net/http/pprof"
 	"time"
 
 	"app-go/service"
@@ -19,53 +20,65 @@ const (
 )
 
 type Server struct {
-	Server *httpserver.Server
-	Log    *slog.Logger
-	Port   int
-	srv    service.App
+	Log       *slog.Logger
+	Port      int
+	PortDebug int
+	srv       service.App
 }
 
-func NewServer(port int, srv service.App) Server {
-	r := httpserver.NewServeMux()
-
-	s := Server{
-		Port: port,
-		Log:  slog.Default().With("component", "http"),
-		srv:  srv,
+func NewServer(port, debug int, srv service.App) Server {
+	return Server{
+		Port:      port,
+		PortDebug: debug,
+		Log:       slog.Default().With("component", "http"),
+		srv:       srv,
 	}
-	s.Server = &httpserver.Server{Handler: s.RequestLogger(r)}
-
-	s.setRoutes(r)
-
-	return s
 }
 
 func (s Server) setRoutes(r *httpserver.ServeMux) {
-
 	r.Handle("GET /api/v1/read", http.HandlerFunc(s.read))
 	r.Handle("POST /api/v1/something", http.HandlerFunc(s.something))
 	r.Handle("POST /api/v1/something/{id}", http.HandlerFunc(s.somethingId))
 }
 
 func (s Server) Serve(ctx context.Context) error {
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Port))
-	if err != nil {
-		return fmt.Errorf("http serve: %w", err)
-	}
+	r := httpserver.NewServeMux()
+	s.setRoutes(r)
+
+	return s._serve(ctx, &httpserver.Server{
+		Addr:    fmt.Sprintf(":%d", s.Port),
+		Handler: s.RequestLogger(r),
+	})
+}
+
+func (s Server) ServeDebug(ctx context.Context) error {
+	return s._serve(ctx, &http.Server{
+		Addr:    fmt.Sprintf(":%d", s.PortDebug),
+		Handler: http.DefaultServeMux,
+	})
+}
+
+func (s Server) _serve(ctx context.Context, srv *httpserver.Server) error {
+	errCh := make(chan error, 1)
 
 	go func() {
-		<-ctx.Done()
-		s.Log.Info("Shutting down HTTP...")
-		_ = s.Server.Shutdown(context.Background())
+		s.Log.Info(fmt.Sprintf("Serving HTTP%s", srv.Addr))
+		errCh <- srv.ListenAndServe()
 	}()
 
-	s.Log.Info(fmt.Sprintf("Serving HTTP on port %d", s.Port))
+	select {
+	case <-ctx.Done():
+		s.Log.Info(fmt.Sprintf("Shutting down HTTP%s", srv.Addr))
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return srv.Shutdown(shutdownCtx)
 
-	if err := s.Server.Serve(ln); err != nil {
-		return err
+	case err := <-errCh:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
 	}
-
-	return nil
 }
 
 func (s Server) Reply(w httpserver.ResponseWriter, code int, v any) {
