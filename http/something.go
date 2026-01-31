@@ -7,7 +7,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 
-	"app-go/http/api"
+	"github.com/pisabev/app-go/http/api"
 )
 
 func (s Server) read(w httpserver.ResponseWriter, r *httpserver.Request) {

@@ -1,4 +1,4 @@
-module app-go
+module github.com/pisabev/app-go
 
 go 1.25.6
 

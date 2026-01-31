@@ -10,9 +10,9 @@ import (
 	"strings"
 	"syscall"
 
-	"app-go/common"
-	"app-go/http"
-	"app-go/service"
+	"github.com/pisabev/app-go/common"
+	"github.com/pisabev/app-go/http"
+	"github.com/pisabev/app-go/service"
 
 	"github.com/peterbourgon/ff/v3"
 	"golang.org/x/sync/errgroup"
@@ -23,7 +23,7 @@ func main() {
 	common.DotEnv()
 
 	// Create context that gets canceled on certain signals
-	ctx, cancelFn := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	ctx, cancelFn := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancelFn()
 
 	if err := run(ctx); err != nil {

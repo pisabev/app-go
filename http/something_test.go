@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"app-go/common"
-	"app-go/http/api"
-	"app-go/service/mock"
+	"github.com/pisabev/app-go/common"
+	"github.com/pisabev/app-go/http/api"
+	"github.com/pisabev/app-go/service/mock"
 )
 
 func TestRead(t *testing.T) {

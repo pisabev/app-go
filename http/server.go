@@ -11,7 +11,7 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	"app-go/service"
+	"github.com/pisabev/app-go/service"
 )
 
 const (
